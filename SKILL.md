@@ -1,89 +1,96 @@
 ---
 name: task-arrangement
-description: Coordinate all project code modifications through subagents. Use whenever Codex is asked to modify project code, tests, build configuration, migrations, or implementation-adjacent project files, especially when any file edit is expected.
+description: Coordinate broad project code changes through delegated subagents. Use when a change spans multiple services, modules, or independently owned file scopes and benefits from delegated implementation, or when the user explicitly requests subagent delegation. Keep read-only reviews and small, low-risk, single-file changes with the main agent unless the user specifically requires a subagent.
 ---
 
 # Task Arrangement
 
-Use this skill to make subagent delegation the required execution path for project code changes.
+Coordinate code changes through explicitly owned subagent tasks while keeping analysis, integration review, and user communication with the main agent.
 
 ## Core Rule
 
-When modifying project code, always use subagents to perform the code edits. The main agent must not directly edit project code. The main agent owns analysis, planning, delegation, integration review, and the final response.
+Use subagents when a code change spans multiple services, modules, or independently owned file scopes, or when the user specifically requests subagent delegation.
 
-If a code modification is required but no subagent mechanism is available, stop before editing code and tell the user that the requested workflow cannot be followed until subagents are available.
+For delegated work, assign code edits to subagents. Keep analysis, task decomposition, integration review, and the final response with the main agent. Follow higher-priority instructions when they require a different execution path.
 
-## Subagent Model
+Keep read-only reviews and small, low-risk, single-file changes with the main agent. Delegate them only when the user specifically requires a subagent or a higher-priority instruction requires delegation.
 
-When spawning any subagent for this workflow, explicitly set:
+## Subagent Configuration
+
+Unless a higher-priority instruction requires different values, use:
 
 - `model`: `gpt-5.6-terra`
-- `reasoning_effort`: `high`
+- `fork_turns`: `"none"`
+- `reasoning_effort`: `medium` for explorers, verifiers, and routine implementation workers
+- `reasoning_effort`: `high` only for workers implementing genuinely complex changes
 
-Apply this configuration to every worker, explorer, verifier, or follow-up subagent created for a code modification task unless a higher-priority instruction requires a different model.
+Always set `fork_turns: "none"`. Never copy the full conversation history into a subagent.
 
-## Main Agent Responsibilities
+Provide only the minimum context needed to complete the assigned task: relevant repository paths, acceptance criteria, ownership boundaries, essential constraints, existing patterns that must be preserved, and focused validation commands. Omit unrelated conversation history, prior exploration, and duplicated instructions.
 
-Before delegating, analyze the task and produce a concrete implementation plan:
+Treat an implementation as complex only when it involves demanding algorithms, migrations, security-sensitive behavior, substantial cross-module reasoning, or similarly high-risk logic where stronger reasoning is expected to improve the result. Keep routine workers at `medium`.
 
-1. Identify the user's goal, expected behavior, and acceptance criteria.
-2. Inspect the codebase enough to choose the exact files, modules, services, or layers that need changes.
-3. Split the work into subagent tasks with non-overlapping ownership whenever possible.
-4. Define the order of work, including which tasks can run in parallel and which must wait for another result.
-5. Spawn each subagent with `model: gpt-5.6-terra` and `reasoning_effort: high`.
-6. Give each subagent a specific task, explicit file or module ownership, the intended behavior change, and the concrete modification approach.
+## Main Agent Workflow
 
-Delegation instructions must be specific, unambiguous, and easy to understand. Include enough context for the subagent to implement the change without guessing:
+Before delegating:
 
-- The purpose of the change.
-- The files, directories, modules, or service boundaries the subagent owns.
-- The files or areas the subagent must avoid.
-- The expected implementation strategy.
-- Relevant existing patterns or APIs to preserve.
+1. Identify the goal, acceptance criteria, affected scope, and relevant repository instructions.
+2. Inspect enough code and configuration to identify the required files, modules, services, and dependencies.
+3. Keep small, low-risk, single-file work with the main agent; split broader work only where ownership can be explicit and non-overlapping.
+4. Determine which tasks must run sequentially and which can safely run concurrently.
+5. Inspect current agent capacity when the runtime provides that capability.
+6. Spawn each subagent with the required role-based effort and minimum sufficient task-local context.
+
+For every delegation, specify:
+
+- The purpose and intended behavior change.
+- Owned files, directories, modules, or service boundaries.
+- Files or areas that must not be modified.
+- The implementation approach and existing patterns to preserve.
 - Required validation commands or checks.
-- The expected final report format.
+- The expected report: changed files, implementation details, verification results, and residual risks.
 
-Always tell subagents that they are not alone in the codebase, must not revert work from others, and must adapt to concurrent changes if they encounter them.
+Tell each subagent to preserve concurrent work, avoid reverting changes it does not own, and adapt to changes already present in the workspace.
 
-## Subagent Responsibilities
+## Role Selection
 
-Each subagent must perform the assigned code modification inside its owned scope. After implementation, the subagent must self-check the result against the assigned goal.
+Default to one implementation worker per independent writable scope. Require that worker to inspect the relevant local context, implement the change, and validate its own result.
 
-The subagent workflow is:
+Create a separate explorer only when discovery is substantial or the correct implementation scope cannot be determined efficiently by the main agent. Create a separate verifier only when independent validation materially reduces risk, such as for security-sensitive changes, migrations, broad refactors, or weak test coverage.
 
-1. Read the assigned files and relevant local context.
-2. Implement the requested change using the concrete approach provided by the main agent.
+Do not create separate explorer, implementer, and verifier agents for the same scope by default. Use all three roles only when the task's complexity or risk clearly justifies their additional calls.
+
+## Subagent Workflow
+
+Require each subagent to:
+
+1. Read the assigned files and relevant local instructions.
+2. Modify only its owned scope.
 3. Run focused validation when practical.
-4. Compare the result against the task goal and acceptance criteria.
-5. If the goal is not fully met, continue modifying and self-checking until the task is complete.
-6. Report changed files, implementation details, validation results, and any residual risks or blockers to the main agent.
+4. Compare the result with the stated acceptance criteria.
+5. Continue correcting issues until its assigned goal is complete.
+6. Report dependencies or blockers instead of expanding into unrelated files.
 
-Subagents should not broaden their scope without a clear reason. If the assigned goal cannot be achieved within the owned files or modules, the subagent must report the dependency or blocker instead of editing unrelated areas.
+## Capacity and Parallelism
 
-## Parallel Work
+Run tasks concurrently only when their writable scopes do not overlap, they do not depend on each other's output, and enough concurrency capacity is available.
 
-When multiple code changes are independent and their file scopes do not overlap, the main agent should decide this without waiting for user confirmation and launch multiple subagents concurrently.
+Never assign the same writable file to concurrent subagents. Run shared-file or sequentially dependent tasks in order.
 
-Use parallel subagents for separate services, modules, layers, or independently testable changes. Avoid parallel delegation when tasks share the same files, require tight sequencing, or would create avoidable merge conflicts.
+When capacity is temporarily exhausted, wait for an active agent, reuse an idle agent, or queue remaining tasks for sequential execution. Do not treat temporary capacity exhaustion as permanent unavailability.
+
+If delegation is required but no subagent mechanism exists, stop before editing and explain the constraint. Otherwise, allow the main agent to complete small, low-risk, single-file work directly.
 
 ## Integration Review
 
-After all subagents finish, the main agent must review their summaries and inspect the resulting changes enough to confirm the full user goal is satisfied.
+After delegated work completes:
 
-The main agent must:
-
-1. Check that every delegated task completed its stated purpose.
-2. Confirm that subagent changes are compatible with one another.
-3. Run or review final verification appropriate to the overall change.
-4. Request follow-up subagent work if any task is incomplete, inconsistent, or insufficiently validated.
-5. Only finish after determining that all tasks are complete and the original goal has been met.
+1. Review every subagent report and inspect the resulting changes.
+2. Confirm that each task meets its acceptance criteria and that combined changes are compatible.
+3. Run or review final validation appropriate to the full change.
+4. Delegate follow-up work for incomplete, conflicting, or insufficiently validated results.
+5. Finish only after the original goal is satisfied.
 
 ## Final Response
 
-In the final user response, summarize the completed work in Chinese when the user requires Chinese responses. Include:
-
-- The overall change completed.
-- Which subagent tasks were performed.
-- Key files or modules changed.
-- Verification performed and any commands that could not be run.
-- Any remaining risks or follow-up actions, if applicable.
+Report the overall result, delegated tasks, changed files or modules, validation performed, commands that could not run, and any remaining risks. Reply in Chinese when the user or repository instructions require Chinese.
