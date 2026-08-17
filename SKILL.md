@@ -17,7 +17,7 @@ If a code modification is required but no subagent mechanism is available, stop 
 
 When spawning any subagent for this workflow, explicitly set:
 
-- `model`: `gpt-5.4-mini`
+- `model`: `gpt-5.6-terra`
 - `reasoning_effort`: `high`
 
 Apply this configuration to every worker, explorer, verifier, or follow-up subagent created for a code modification task unless a higher-priority instruction requires a different model.
@@ -30,7 +30,7 @@ Before delegating, analyze the task and produce a concrete implementation plan:
 2. Inspect the codebase enough to choose the exact files, modules, services, or layers that need changes.
 3. Split the work into subagent tasks with non-overlapping ownership whenever possible.
 4. Define the order of work, including which tasks can run in parallel and which must wait for another result.
-5. Spawn each subagent with `model: gpt-5.4-mini` and `reasoning_effort: high`.
+5. Spawn each subagent with `model: gpt-5.6-terra` and `reasoning_effort: high`.
 6. Give each subagent a specific task, explicit file or module ownership, the intended behavior change, and the concrete modification approach.
 
 Delegation instructions must be specific, unambiguous, and easy to understand. Include enough context for the subagent to implement the change without guessing:

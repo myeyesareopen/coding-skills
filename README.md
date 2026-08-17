@@ -32,7 +32,7 @@
 
 当前约定的 subagent 配置如下:
 
-- `model`: `gpt-5.4-mini`
+- `model`: `gpt-5.6-terra`
 - `reasoning_effort`: `high`
 
 该配置应应用于执行代码修改任务的 worker、explorer、verifier 及后续跟进 subagent, 除非有更高优先级指令覆盖。
@@ -103,7 +103,7 @@ Key values from the current agent configuration are:
 
 The current subagent configuration is:
 
-- `model`: `gpt-5.4-mini`
+- `model`: `gpt-5.6-terra`
 - `reasoning_effort`: `high`
 
 This configuration should be used for workers, explorers, verifiers, and follow-up subagents involved in code modification tasks unless a higher-priority instruction overrides it.
