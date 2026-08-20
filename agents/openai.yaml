@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Arrangement"
-  short_description: "Coordinate broad code changes through delegated subagents."
-  default_prompt: "Use $task-arrangement to coordinate a broad code change with clearly owned subagent tasks."
+  short_description: "Route code changes with isolation and coordinator integration."
+  default_prompt: "Use $task-arrangement to route dependent code changes with isolated workers and coordinator-owned integration."

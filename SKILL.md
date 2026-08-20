@@ -1,96 +1,59 @@
 ---
 name: task-arrangement
-description: Coordinate broad project code changes through delegated subagents. Use when a change spans multiple services, modules, or independently owned file scopes and benefits from delegated implementation, or when the user explicitly requests subagent delegation. Keep read-only reviews and small, low-risk, single-file changes with the main agent unless the user specifically requires a subagent.
+description: Plan and coordinate broad code changes through dependency-aware subagents, dynamic capability routing, safe workspace isolation, recovery, and coordinator-owned integration. Use when work spans services, modules, or independent writable scopes; discovery is substantial; migrations, security, or major refactors need independent verification; or the user explicitly requests subagent delegation. Keep small, low-risk, single-file work with the main agent unless delegation is required.
 ---
 
 # Task Arrangement
 
-Coordinate code changes through explicitly owned subagent tasks while keeping analysis, integration review, and user communication with the main agent.
+Act as the architect, coordinator, and integrator. Delegate only when **Delegation Benefit > Coordination Cost**: expected independent progress, expertise, or risk reduction must exceed discovery, prompting, integration, and validation overhead. Keep small, low-risk, single-file work; tightly coupled changes; and quick read-only checks local. Delegate independent scopes, substantial discovery, or material-risk validation when clear ownership and a useful parallel path exist. When the user or a higher-priority instruction explicitly requires subagents, comply while still choosing the smallest safe role set.
 
-## Core Rule
+## Phase 1 — Plan safely
 
-Use subagents when a code change spans multiple services, modules, or independently owned file scopes, or when the user specifically requests subagent delegation.
+1. Read repository instructions and inspect enough code to state the goal, acceptance criteria, affected scopes, dependencies, and validation plan.
+2. Build a dependency graph. Mark shared mutable contracts: common files, schemas, generated outputs, APIs, configuration, lockfiles, migrations, and test fixtures. These owners must work sequentially or through an explicit interface contract.
+3. Stabilize any shared mutable contract or logical dependency serially before parallel work. Then select an execution mode:
+   - **Direct:** main agent performs narrow work.
+   - **Shared workspace:** use for read-heavy work or small, low-risk, isolated writes with disjoint paths.
+   - **Isolated worktrees:** MUST be used for each non-trivial, write-heavy scope that will run concurrently. Use them only when ownership is isolated and the base is stable; never treat a worktree as permission to parallelize overlapping changes or unresolved dependencies.
+4. Inspect the working tree before writes. Preserve existing dirty changes; never reset, overwrite, or “clean up” work outside an assigned scope. If ownership or intent is ambiguous, stop and ask.
 
-For delegated work, assign code edits to subagents. Keep analysis, task decomposition, integration review, and the final response with the main agent. Follow higher-priority instructions when they require a different execution path.
+## Roles and prompts
 
-Keep read-only reviews and small, low-risk, single-file changes with the main agent. Delegate them only when the user specifically requires a subagent or a higher-priority instruction requires delegation.
+Use the smallest role set that solves the task.
 
-## Subagent Configuration
+- **Main:** plan, create the graph, assign ownership, coordinate dependencies, review integration, communicate, and deliver.
+- **Explorer:** read-only discovery when scope or existing conventions are unclear; report evidence and recommendations, not edits.
+- **Worker:** implement and focused-validate one explicit writable scope.
+- **Verifier:** independently inspect and validate material risk, such as migrations, security-sensitive changes, broad refactors, or weak test coverage.
 
-Unless a higher-priority instruction requires different values, use:
+Give every agent minimum sufficient context: goal, owned paths, no-touch paths, relevant contracts/patterns, acceptance criteria, focused checks, and required report. Always use `fork_turns: "none"`; do not copy full conversation history.
 
-- `model`: `gpt-5.6-terra`
-- `fork_turns`: `"none"`
-- `reasoning_effort`: `medium` for explorers, verifiers, and routine implementation workers
-- `reasoning_effort`: `high` only for workers implementing genuinely complex changes
+Before delegating an implementation worker, read and fill the complete [worker prompt](references/worker-prompt.md). Before assigning an explorer or verifier, read the corresponding [explorer prompt](references/explorer-prompt.md) or [verifier prompt](references/verifier-prompt.md). Before creating, integrating, recovering, or cleaning up isolated worktrees, read the complete [worktree policy](references/worktree-policy.md). Do not delegate from memory when the relevant reference applies.
 
-Always set `fork_turns: "none"`. Never copy the full conversation history into a subagent.
+Route by capability first, then reasoning:
 
-Provide only the minimum context needed to complete the assigned task: relevant repository paths, acceptance criteria, ownership boundaries, essential constraints, existing patterns that must be preserved, and focused validation commands. Omit unrelated conversation history, prior exploration, and duplicated instructions.
+- Narrow search, repetitive inspection, or a simple explorer → lightest available capable model with `medium` reasoning.
+- Complex discovery or routine implementation → mid-tier available model with `medium` reasoning.
+- Ordinary independent review → mid-tier available model with `high` reasoning when supported.
+- Architecture, difficult algorithms, or complex refactors → strongest available model with `high` reasoning.
+- Security, migrations, or critical integration → strongest available model with `high`/`xhigh` reasoning when supported.
 
-Treat an implementation as complex only when it involves demanding algorithms, migrations, security-sensitive behavior, substantial cross-module reasoning, or similarly high-risk logic where stronger reasoning is expected to improve the result. Keep routine workers at `medium`.
+Inspect the runtime's callable model overrides instead of guessing names. For example, when both are actually offered, use `gpt-5.6-terra` for routine work and `gpt-5.6-sol` for complex or critical work; never invent an unavailable lighter tier. Do not substitute extra reasoning for a required model capability. Overrides are optional: if the intended override is unavailable, inherit the runtime default, reduce scope/parallelism, or keep the work with the main agent. Do not require unavailable tools.
 
-## Main Agent Workflow
+## Phase 2 — Execute and coordinate
 
-Before delegating:
+Assign one worker per independent writable scope. Parallelize only after confirming disjoint writes, no order dependency, and sufficient capacity. Parallel reads are normally safe; concurrent edits to the same file or shared mutable contract are not.
 
-1. Identify the goal, acceptance criteria, affected scope, and relevant repository instructions.
-2. Inspect enough code and configuration to identify the required files, modules, services, and dependencies.
-3. Keep small, low-risk, single-file work with the main agent; split broader work only where ownership can be explicit and non-overlapping.
-4. Determine which tasks must run sequentially and which can safely run concurrently.
-5. Inspect current agent capacity when the runtime provides that capability.
-6. Spawn each subagent with the required role-based effort and minimum sufficient task-local context.
+At capacity, wait for progress, reuse an idle agent, or queue the next dependency-ready task. Do not abandon useful work merely because capacity is temporarily full.
 
-For every delegation, specify:
+Workers MUST stay within ownership, inspect local changes before editing, preserve concurrent work, and run focused checks. Their final report MUST contain `STATUS`, `SUMMARY`, `FILES`, `VALIDATION`, `COMMIT`, and `RISKS`; use `COMMIT: N/A` in shared-workspace mode. Explorers and verifiers MUST remain read-only unless the main agent explicitly reassigns them.
 
-- The purpose and intended behavior change.
-- Owned files, directories, modules, or service boundaries.
-- Files or areas that must not be modified.
-- The implementation approach and existing patterns to preserve.
-- Required validation commands or checks.
-- The expected report: changed files, implementation details, verification results, and residual risks.
+For worktrees, first protect and record any dirty main workspace; capture a fixed integration base SHA; create exactly one `agent/<task>` branch and one worktree for each worker; and require that worker's atomic commit SHA in its report. The main agent reviews and cherry-picks approved commits in dependency order, resolves integration conflicts, and validates the combined result. Clean up and prune only after successful validation; preserve failed worktrees for inspection and recovery. Follow [worktree policy](references/worktree-policy.md) for detailed commands.
 
-Tell each subagent to preserve concurrent work, avoid reverting changes it does not own, and adapt to changes already present in the workspace.
+## Phase 3 — Integrate, recover, and report
 
-## Role Selection
+Review every report and diff against acceptance criteria and the dependency graph. Re-check shared contracts after all dependent changes land. Validate in layers: local static/format checks, focused unit or component tests, integration/build checks, then targeted manual or end-to-end checks when risk warrants. Record skipped checks and why.
 
-Default to one implementation worker per independent writable scope. Require that worker to inspect the relevant local context, implement the change, and validate its own result.
+On a missing result or timeout, first inspect the worker worktree's `git status`, `git diff`, and `git log`. If useful work exists, preserve it and assign a continuation worker with that evidence. Only if no useful work exists, make at most one focused automatic retry with corrected context. If that retry fails, the main agent completes a serial fallback or reports the blocker. Never automatically discard valuable work, spin indefinitely, or silently broaden scope.
 
-Create a separate explorer only when discovery is substantial or the correct implementation scope cannot be determined efficiently by the main agent. Create a separate verifier only when independent validation materially reduces risk, such as for security-sensitive changes, migrations, broad refactors, or weak test coverage.
-
-Do not create separate explorer, implementer, and verifier agents for the same scope by default. Use all three roles only when the task's complexity or risk clearly justifies their additional calls.
-
-## Subagent Workflow
-
-Require each subagent to:
-
-1. Read the assigned files and relevant local instructions.
-2. Modify only its owned scope.
-3. Run focused validation when practical.
-4. Compare the result with the stated acceptance criteria.
-5. Continue correcting issues until its assigned goal is complete.
-6. Report dependencies or blockers instead of expanding into unrelated files.
-
-## Capacity and Parallelism
-
-Run tasks concurrently only when their writable scopes do not overlap, they do not depend on each other's output, and enough concurrency capacity is available.
-
-Never assign the same writable file to concurrent subagents. Run shared-file or sequentially dependent tasks in order.
-
-When capacity is temporarily exhausted, wait for an active agent, reuse an idle agent, or queue remaining tasks for sequential execution. Do not treat temporary capacity exhaustion as permanent unavailability.
-
-If delegation is required but no subagent mechanism exists, stop before editing and explain the constraint. Otherwise, allow the main agent to complete small, low-risk, single-file work directly.
-
-## Integration Review
-
-After delegated work completes:
-
-1. Review every subagent report and inspect the resulting changes.
-2. Confirm that each task meets its acceptance criteria and that combined changes are compatible.
-3. Run or review final validation appropriate to the full change.
-4. Delegate follow-up work for incomplete, conflicting, or insufficiently validated results.
-5. Finish only after the original goal is satisfied.
-
-## Final Response
-
-Report the overall result, delegated tasks, changed files or modules, validation performed, commands that could not run, and any remaining risks. Reply in Chinese when the user or repository instructions require Chinese.
+Finish only when the original goal is integrated and validated proportionally. Report status, outcome, delegated roles, changed files/modules, validation and skipped checks, integration/worktree actions, and remaining risks or blockers. When the runtime exposes evaluation data, also record task type, agent count, model/reasoning route, workspace mode, conflicts, retry count, token usage, and whether the main agent had to redo work; use these observations to refine future routing rather than adding runtime infrastructure.
