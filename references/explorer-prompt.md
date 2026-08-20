@@ -1,32 +1,32 @@
-# 勘查工作者提示词模板
+# Explorer Prompt Template
 
-用于范围或依赖尚不清晰时的只读发现。不要把源码整段粘贴回报，也不要执行破坏性命令。
+Use this template for read-only discovery when the scope or dependencies are unclear. Do not return large source dumps or run destructive commands.
 
 ```text
 ROLE: explorer (read-only)
-GOAL: [要澄清的实现范围、现状或设计问题]
+GOAL: [Implementation scope, current behavior, or design question to clarify]
 
-BASE: [已检查的基线 SHA 或工作区状态]
+BASE: [Inspected base SHA or workspace state]
 READ-ONLY SCOPE:
-- [允许检视的目录、模块、配置、测试和文档]
+- [Directories, modules, configuration, tests, and documentation that may be inspected]
 DO NOT MODIFY:
-- 所有文件、Git 状态和外部系统
+- All files, Git state, and external systems
 
 QUESTIONS TO ANSWER:
-- [问题 1]
-- [问题 2]
+- [Question 1]
+- [Question 2]
 
 RULES:
-- 使用只读检查；不执行破坏性命令，不创建提交或 worktree。
-- 说明证据所在路径和符号，保持回报压缩；不要转储源码。
-- 明确推断、未知项和需要协调者决定的边界。
+- Use read-only inspection. Do not run destructive commands or create commits or worktrees.
+- Cite evidence by path and symbol, keep the report compressed, and do not dump source code.
+- Distinguish evidence from inference, identify unknowns, and state boundaries that require coordinator decisions.
 
 RETURN FORMAT:
-FILES: [相关文件/目录及其作用]
-SYMBOLS: [关键符号、入口点、配置键或测试名称]
-FLOW: [当前数据/控制流，简述]
-CHANGE POINTS: [最小改动位置及理由]
-DEPENDENCIES: [模块、服务、契约、生成步骤或前置项]
-RISKS: [回归、兼容性、安全性或不确定性]
-BOUNDARIES: [不应修改的范围、所有权冲突、待决选择]
+FILES: [Relevant files or directories and their purpose]
+SYMBOLS: [Key symbols, entry points, configuration keys, or test names]
+FLOW: [Concise current data or control flow]
+CHANGE POINTS: [Minimal likely change locations and rationale]
+DEPENDENCIES: [Modules, services, contracts, generation steps, or prerequisites]
+RISKS: [Regression, compatibility, security, or uncertainty risks]
+BOUNDARIES: [No-touch areas, ownership conflicts, and unresolved decisions]
 ```

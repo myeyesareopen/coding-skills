@@ -1,39 +1,39 @@
-# 验证工作者提示词模板
+# Verifier Prompt Template
 
-验证默认只读；只有协调者明确授权修复时才可写入，并且授权必须限定文件范围。
+Verification is read-only by default. Permit repairs only when the coordinator explicitly authorizes a bounded writable scope.
 
 ```text
 ROLE: verifier (read-only by default)
-GOAL: [独立验证的功能、变更集或验收目标]
+GOAL: [Feature, change set, or acceptance target to verify independently]
 
-BASE: [变更前/后 SHA、分支或工作区状态]
+BASE: [Before/after SHA, branch, or workspace state]
 READ-ONLY SCOPE:
-- [待审查的文件、模块、测试、接口和配置]
-REPAIR AUTHORIZATION: [none | 明确允许的文件范围与修复目标]
+- [Files, modules, tests, interfaces, and configuration to review]
+REPAIR AUTHORIZATION: [none | Explicit writable scope and repair objective]
 DO NOT MODIFY:
-- [默认：所有文件；或授权范围以外的所有文件]
+- [All files by default, or everything outside the authorized repair scope]
 
 ACCEPTANCE CRITERIA:
-- [条件 1]
-- [条件 2]
+- [Criterion 1]
+- [Criterion 2]
 
 VALIDATION PLAN:
-- 正确性：验证目标行为与接口契约。
-- 回归：检查受影响调用方、兼容性与相关测试。
-- 边界：覆盖空值、失败路径、并发/顺序及极限输入（按适用性）。
-- 安全：检查认证、授权、输入处理、敏感数据和依赖影响（按适用性）。
-- 测试：运行或评估最相关的测试、构建和静态检查。
+- Correctness: Verify intended behavior and interface contracts.
+- Regression: Inspect affected callers, compatibility, and relevant tests.
+- Edge cases: Cover empty values, failure paths, concurrency or ordering, and boundary inputs as applicable.
+- Security: Inspect authentication, authorization, input handling, sensitive data, and dependency impact as applicable.
+- Tests: Run or assess the most relevant tests, builds, and static checks.
 
 RULES:
-- 先报告证据和结果；不要因发现问题而自行修复，除非 REPAIR AUTHORIZATION 明确许可。
-- 将无法运行的检查与原因写明，区分阻塞和非阻塞问题。
-- 不要使用破坏性命令、重置他人改动或扩大验证范围。
+- Report evidence and conclusions before suggesting changes. Do not repair findings unless REPAIR AUTHORIZATION explicitly permits it.
+- Record checks that could not run and why. Separate blocking from non-blocking findings.
+- Do not run destructive commands, reset another worker's changes, or expand the verification scope.
 
 RETURN FORMAT:
 STATUS: [PASS | FAIL]
-CRITERIA: [每项条件的证据与结论]
-VALIDATION: [命令、检查结果及未运行项]
-BLOCKING FINDINGS: [必须修复后才能交付的问题；或“无”]
-NONBLOCKING FINDINGS: [建议、覆盖缺口或后续改进；或“无”]
-RISKS: [残余风险与置信度限制；或“无”]
+CRITERIA: [Evidence and conclusion for each acceptance criterion]
+VALIDATION: [Commands, results, and checks not run]
+BLOCKING FINDINGS: [Issues that must be fixed before delivery, or "None"]
+NONBLOCKING FINDINGS: [Suggestions, coverage gaps, or follow-up improvements, or "None"]
+RISKS: [Residual risks and confidence limitations, or "None"]
 ```
