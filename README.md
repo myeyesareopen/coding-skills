@@ -1,27 +1,27 @@
 # task-arrangement
 
-## 中文
+协调 Codex 与 DeepSeek 的项目代码工作。主代理负责设计、任务分解与最终集成；小型低风险修改直接完成；方案明确、范围受限的实现交给 DeepSeek；较复杂的实现和独立风险验收交给 Codex gpt-5.6-sol，复杂工作使用 high。
 
-`task-arrangement` 用于通过职责清晰的 subagent 协调广泛的项目代码变更。任务跨多个服务、模块或独立文件范围，或用户明确要求 subagent 时使用；小型、低风险、单文件任务继续由主 agent 直接完成。
+DeepSeek 仍通过随附 scripts/dispatch.mjs 调用本机 @deepseek-ai/dsh 0.1.5-rc.2：SDK stdio JSON-RPC、sdk-minimal、deepseek-flash、max、393216输出上限。无需单独安装 deepseek-executor skill，也不改变 dsh、凭据或本地 Web 会话配置。
 
-默认 subagent 配置：
+权威规则见 [SKILL.md](SKILL.md)。按任务选择阅读：
 
-- `model`: `gpt-5.6-terra`
-- `fork_turns`: `"none"`
-- `reasoning_effort`: explorer、verifier 和常规 worker 使用 `medium`
-- `reasoning_effort`: 仅复杂实现 worker 使用 `high`
+- [路由与验收](references/routing-and-acceptance.md)：任务分层、状态边界、验收场景。
+- [DeepSeek 调用协议](references/deepseek-dispatch.md)：固定配置、JSON任务单、运行与终态。
+- [Codex 角色任务单](references/codex-worker.md)：实现、探索、独立验收。
+- [工作区与恢复](references/workspaces.md)：基线、隔离、集成和失败产出保护。
 
-默认由一个 worker 完成所属范围的检查、实现和自验。只有任务风险或复杂度确实需要时，才额外创建 explorer 或 verifier；委派提示只包含最小充分上下文。完整且权威的执行规则见 [SKILL.md](./SKILL.md)。
+两个通道共用20个活跃名额上限，并服从运行平台更低的上限。Codex名额需通过runner预留；跨通道的文件所有权仍由主代理检查。单次运行目录应独立于项目测试/构建清理目录。
+
+本地验证（不调用付费模型）：
+
+```powershell
+node --test scripts/dispatch.test.mjs
+node scripts/dispatch.mjs doctor
+```
+
+安装时将 SKILL.md、agents、references、scripts（可含本 README）复制到 Codex skills 目录下的 task-arrangement 文件夹，不复制 .git。runner保留历史 deepseek-executor-state 状态目录，以兼容共享槽位；这不依赖旧skill文件夹，也不应随旧skill卸载而清理。
 
 ## English
 
-`task-arrangement` coordinates broad project code changes through subagents with explicit ownership. Use it when work spans multiple services, modules, or independent file scopes, or when the user specifically requests subagent delegation. Keep small, low-risk, single-file work with the main agent.
-
-Default subagent configuration:
-
-- `model`: `gpt-5.6-terra`
-- `fork_turns`: `"none"`
-- `reasoning_effort`: `medium` for explorers, verifiers, and routine workers
-- `reasoning_effort`: `high` only for complex implementation workers
-
-Default to one worker that inspects, implements, and validates its owned scope. Add separate explorer or verifier roles only when risk or complexity justifies them, and provide only minimum sufficient context. See [SKILL.md](./SKILL.md) for the authoritative workflow.
+Coordinate code work through one policy layer: the main agent owns decisions and integration, bounded implementation uses the bundled DeepSeek dsh harness, and more complex implementation or verification uses Codex gpt-5.6-sol. Keep narrow low-risk work local. Preserve the fixed DeepSeek protocol and parameters; do not silently route complex work down to DeepSeek or upgrade the Codex model. See SKILL.md for routing, ownership, capacity and acceptance rules.

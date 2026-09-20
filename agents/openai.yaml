@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Arrangement"
-  short_description: "Coordinate broad code changes through delegated subagents."
-  default_prompt: "Use $task-arrangement to coordinate a broad code change with clearly owned subagent tasks."
+  short_description: "Route scoped work to DeepSeek and complex work to Codex."
+  default_prompt: "Use $task-arrangement to plan and coordinate owned code tasks, sending bounded implementation to the bundled DeepSeek harness and more complex work to Codex."
