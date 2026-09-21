@@ -1,11 +1,13 @@
 ---
 name: task-arrangement
-description: Coordinate broad code changes with explicit ownership, dependency-aware task tiers, bounded DeepSeek implementation through the bundled dsh harness, and Codex workers for more complex tasks. Use for multi-module changes or requested delegation; keep small low-risk edits and quick reviews with the main agent.
+description: Coordinate multi-module code changes or requested delegation with explicit ownership and dependency-aware batches. Route bounded implementation through the bundled DeepSeek dsh harness; default Codex investigation and review to gpt-5.6-sol, reserving gpt-6-astra for complex unresolved reasoning.
 ---
 
 # Task Arrangement
 
-主代理负责需求理解、架构与契约决策、任务分层、集成验收和用户沟通。DeepSeek 负责已确定方案中的受限实施；较复杂任务使用 Codex 的较低级别模型。只有预期独立进展或风险降低足以覆盖交接与验收成本时才委派。向用户用中文汇报。
+主代理负责需求理解、架构与契约决策、任务分层、集成验收和用户沟通。**可明确下达方案和验收的代码实施默认且必须使用 DeepSeek harness；Codex 调查、方案辅助和评审默认使用 gpt-5.6-sol；仅复杂的未决推理使用 gpt-6-astra。** 下文列出的微小直接修改、复杂核心实现和已证实的 harness 故障是例外，不能把 native subagent 当作通用代码执行入口。向用户用中文汇报。
+
+模型规则作用于本 skill 创建的 Codex 执行者；不能通过文字指令切换当前主代理模型。当前主代理即使是 astra，也应将值得委派的普通调查/评审交给 sol，明确方案后的实施交给 DeepSeek，不让子代理继承 astra。
 
 本 skill 自带 DeepSeek runner，不依赖单独安装的 deepseek-executor skill。两种执行通道由同一个主代理协调，不让执行者递归派发任务。
 
@@ -13,26 +15,38 @@ description: Coordinate broad code changes with explicit ownership, dependency-a
 
 | 层级 | 判断依据 | 执行方式 |
 |---|---|---|
-| 主代理直接处理 | 小型、低风险、紧密耦合修改；快速只读检查；需求、架构和关键契约决策；最终集成 | 当前主代理 |
-| DeepSeek 受限执行 | 主代理已确定方案和契约、相关上下文可明确列出、可写范围独立、结果有定向验收；局部实现、修复、重构及其定向核对/自测 | 本 skill 的 scripts/dispatch.mjs |
-| Codex 较复杂执行 | 需要跨模块推理、未知根因调查、复杂算法、状态/并发/事务逻辑、迁移或安全敏感实现；独立风险验收 | native subagent，优先 gpt-5.6-sol |
+| 主代理直接处理 | 无需调查和设计的一处明显修正，如文案/拼写/单个配置值；快速只读检查；需求、架构和关键契约决策；必要的最终集成 | 当前主代理，不能用“小任务”承接完整功能或批量修复 |
+| DeepSeek 默认实施 | 方案、契约、上下文、独占可写范围和验收已明确；功能实现、修复、适配、重构及必要定向测试 | 必须实际调用 scripts/dispatch.mjs，即使只有一个实施任务也可 concurrency=1 |
+| Codex 默认调查/评审 | 代码定位、常规根因调查、方案辅助、代码审查与独立验收；符合下文例外的实现 | native subagent，显式 gpt-5.6-sol，通常 medium，较难用 high |
+| Codex 复杂推理 | 已指出无法局部化的多模块因果链、困难算法/协议证明，或并发/事务/安全边界相互制约且关键策略未定 | native subagent，显式 gpt-6-astra，通常 high，限定复杂核心 |
 
 DeepSeek 保留原执行技能的任务边界：主代理先给出可实施方案，执行者不能自行决定需求、重新设计系统、选择架构或接管关键集成。不要把未完成的设计问题以“实现模块”的名称交给 DeepSeek，也不要因 Codex 忙或不可用而将复杂任务降级给 DeepSeek。
 
 多文件不一定复杂，单文件也可能包含高风险状态机。按未决问题和失败影响判断，不能仅按行数、文件数或模型价格分类。复杂状态、迁移或路由边界不明确时先读 [路由与验收](references/routing-and-acceptance.md)。
+
+### 派发前的路由门槛
+
+1. 判断当前阶段是调查/决策、实施还是验收。先固定未决契约；缺上下文时可由 sol 只读调查，不能直接派一个“调查并实现”的 Codex worker 包揽普通功能。
+2. 每次授予代码写权限前，检查能否写清方案、范围和验收。可以则调用 DeepSeek；“跨多个文件”“Codex 更方便”“已有空闲 subagent”“任务重要”都不是跳过理由。不能为了触发 harness 省略必要设计。
+3. native 写任务必须说明无法交给 DeepSeek 的具体未决判断，或记录已实际遇到的 harness 阻断及证据。优先由 sol 解决判断后交回主代理，再将实施重新路由给 DeepSeek；只有推理与实现不可分离的复杂核心才保留 Codex 写权限。
+4. 选 astra 时写明复杂性与 sol 不适合的具体原因，或 sol 已尝试后的明确缺口。已明显复杂的任务可直接用 astra，无需先失败一次；不能因 high 强度、reviewer 角色、一次测试失败或模型继承而自动升级。
+5. 调查结束、契约冻结或故障排除后，重新判断下一阶段的路由；不能因为 Codex 已接触代码就继续让它完成可下达的实施。
+
+派发记录保持一行即可：`阶段 | 所有者/通道/模型 | 范围 | 路由理由 | 跳过 harness 或升级 astra 的证据（如适用）`。没有适合 DeepSeek 的工作时如实说明，不制造任务凑调用次数。
 
 ### DeepSeek 固定通道
 
 - @deepseek-ai/dsh 0.1.5-rc.2，SDK stdio JSON-RPC，sdk-minimal；保持现有 harness 调用方式。
 - provider=deepseek-official，model=deepseek-flash（DeepSeek-V4.1-Flash），reasoningEffort=max，maxTokens=393216。
 - 不通过 native spawn_agent 冒充 DeepSeek，不改为网页、HTTP/WebSocket、其他 CLI，不自动安装/升级或静默切换模型参数。384K 是单次输出上限，不是输出目标或总任务额度。
-- 派发前读 [DeepSeek 调用协议](references/deepseek-dispatch.md)，填写任务单，依次执行 validate、run，检查实际终态。
+- 派发前读 [DeepSeek 调用协议](references/deepseek-dispatch.md)。本轮首次使用先执行 doctor，填写任务单后依次执行 validate、run，等待 summary.json/result.json 并检查实际终态。doctor/validate 成功或口头声明“交给 DeepSeek”均不算实施调用。
+- doctor/validate/run 出错时按协议处理并保留错误证据；任务单错误先修正，槽位忙先排队，不能未经实际检查就认定 harness 不可用。确认环境阻断且本轮无法恢复时，说明降级原因后可交给 sol；复杂核心仍按复杂性选择 astra。禁止静默改走 subagent。
 - foregroundOnly=true；禁止子代理、dsh 递归和遗留后台服务。真实数据库迁移、外部模型联调及持久服务由主代理管理。
 
 ### Codex 通道
 
-- 使用当前运行环境实际提供的 native subagent 工具。优先 model="gpt-5.6-sol"，fork_turns="none"。
-- Explorer 和常规执行使用 medium；较复杂实现、并发/事务、安全或迁移验收使用 high。默认不升级为更高级别模型。
+- 使用当前运行环境实际提供的 native subagent 工具。默认显式 model="gpt-5.6-sol"、reasoning_effort="medium"、fork_turns="none"；较难调查/验收先考虑 sol high。仅满足复杂推理门槛时显式 model="gpt-6-astra"、reasoning_effort="high"、fork_turns="none"，不省略 model 导致继承当前主代理模型。
+- sol 是 Codex 通道默认值，不取代 DeepSeek 的默认实施职责。安全、迁移、并发等关键词本身不强制 astra；必须指出具体复杂性。提高 reasoning effort 不等于升级模型。
 - 调用前确认该模型及强度可用；不可用时由主代理缩小范围、接手或说明限制，不猜模型名、不静默降给 DeepSeek。
 - 不复制整段对话。读取并填写 [Codex 角色任务单](references/codex-worker.md)，只传最小充分上下文。除非用户明确要求新任务，否则使用 subagent，不创建用户侧新任务。
 

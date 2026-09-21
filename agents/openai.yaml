@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Arrangement"
-  short_description: "Route scoped work to DeepSeek and complex work to Codex."
-  default_prompt: "Use $task-arrangement to plan and coordinate owned code tasks, sending bounded implementation to the bundled DeepSeek harness and more complex work to Codex."
+  short_description: "DeepSeek builds; Sol investigates; Astra handles complexity."
+  default_prompt: "Use $task-arrangement to coordinate code work: run bounded implementation through the bundled DeepSeek harness, explicitly use gpt-5.6-sol for Codex investigation and review, and reserve gpt-6-astra for complex unresolved reasoning with a stated routing reason."

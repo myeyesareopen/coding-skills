@@ -1,6 +1,17 @@
 # 任务单与真实调用
 
-仅用于已按 SKILL.md 分层确定的 DeepSeek 受限任务。Codex 执行者使用 native subagent；不能把复杂任务装入此任务单来绕过分层。
+用于已按 SKILL.md 确定方案、范围和验收的默认实施任务；必须真实运行 harness，不能用 native subagent 代替后仍称为 DeepSeek 执行。不能把未完成设计的复杂任务装入此任务单来绕过分层。
+
+## 每批调用流程与故障分流
+
+1. 本轮首次进入 DeepSeek 通道先执行 doctor，确认本机 Node、固定 dsh 包和版本；环境发生变化后重新检查。doctor 只验证运行入口，不代表凭据或模型调用已成功。
+2. 主代理将已确定方案写成实际 JSON 文件。即使只有一个任务，也填写 concurrency=1 并运行；不能因为没有可并行任务就改派 native worker。
+3. 对这个文件执行 validate；成功后对同一个文件执行 run。validate 失败时先按实际错误修正字段、路径或分批安排，不因任务单错误宣布 harness 不可用。
+4. run 返回 exec session ID 时继续等待同一进程并按需汇报；正常等待、暂无输出、槽位忙均不是切换 subagent 的依据。读取本次 summary.json、各任务 result.json、实际 diff 和检查证据后才判定结果。
+5. 只有安装/凭据/进程/服务等实际阻断本轮无法恢复，或一次有新依据的恢复后仍失败，才说明命令、脱敏错误、已采取的恢复和剩余范围，并按 SKILL.md 转交 sol/复杂核心 astra。不能为了满足形式重复付费调用；不自动安装、改凭据、换 provider 或模型。
+6. needs_decision 先补足主代理决策，notStarted 先检查容量/所有权；均不自动转交 Codex 实施。任务本身出现新的复杂判断时，先由 sol/astra 调查，方案明确后再次路由 DeepSeek。转交前确认旧进程停止并保留有效修改；恢复正常后的新实施任务回到 harness。
+
+派发记录中保留任务单路径、实际 run 调用、运行目录、终态与主代理验收结论；仅有 doctor/validate 或 submitted 回执不能计为完成了一次 DeepSeek 实施。无适用实施任务时不为增加调用数而启动模型。
 
 ## 入口
 
