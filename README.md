@@ -1,28 +1,16 @@
 # task-arrangement
 
-协调 Codex 与 DeepSeek 的项目代码工作。主代理负责设计、任务分解与最终集成；仅一处无需调查/设计的明显修正可直接完成。方案、范围和验收明确的代码实施必须实际调用 DeepSeek harness；调查和评审默认显式使用 gpt-5.6-sol medium/high，仅有具体复杂推理需求时使用 gpt-6-astra high。调查结束后重新路由实施，不能直接让 subagent 顺手改代码；跳过 harness 的实际阻断和升级 astra 的理由需要记录。
+用最少交接协调代码任务：低风险局部修改由主代理直接完成；普通模块默认一个 Luna max 代理连贯定位、修改、自测；需要 Sol 调查的任务可在已授权范围内继续修复；复杂核心使用 Astra high。多个独立模块按所有权并行，主代理检查实际 diff 和验收证据。
 
-DeepSeek 仍通过随附 scripts/dispatch.mjs 调用本机 @deepseek-ai/dsh 0.1.5-rc.2：SDK stdio JSON-RPC、sdk-minimal、deepseek-flash、max、393216输出上限。缺少本地 harness 或无法运行时，主代理先安装固定版本、安全配置 DeepSeek API key 并后台启动；安装、配置或启动失败后，固定使用 gpt-5.6-luna max 替代 DeepSeek 实施。无需单独安装 deepseek-executor skill，保留已有有效凭据及 Web 会话配置。
+当前保留 Luna max 默认，优先优化流程。纯 native 不调用 DeepSeek runner 的 aux/doctor，不例行增加独立评审或重复已通过的检查。只有用户明确要求 DeepSeek 时才使用保留的安装、配置、后台运行及 Luna 回退流程。
 
-权威规则见 [SKILL.md](SKILL.md)。按任务选择阅读：
+- [SKILL.md](SKILL.md)：默认路由、并发、验证和等待规则。
+- [角色任务单](references/codex-worker.md)：简短任务与交付格式。
+- [路由与验收](references/routing-and-acceptance.md)：场景和验证边界。
+- [工作区与恢复](references/workspaces.md)：隔离、已有修改及失败产出保护。
+- [路由器评估](references/router-evaluation.md)：Jev 与动态模型/推理等级的评估边界，尚未启用外部服务。
+- [DeepSeek 协议](references/deepseek-dispatch.md) / [初始化与回退](references/deepseek-bootstrap.md)：仅显式选择 DeepSeek 时读取。
 
-- [路由与验收](references/routing-and-acceptance.md)：任务分层、状态边界、验收场景。
-- [DeepSeek 调用协议](references/deepseek-dispatch.md)：固定配置、JSON任务单、运行与终态。
-- [初始化与 Luna 回退](references/deepseek-bootstrap.md)：主代理安装、API key 配置、后台运行和失败后的替代通道。
-- [Codex 角色任务单](references/codex-worker.md)：实现、探索、独立验收。
-- [工作区与恢复](references/workspaces.md)：基线、隔离、集成和失败产出保护。
+安装时将 SKILL.md、agents、references、scripts（可含 README）复制到 Codex skills/task-arrangement，不复制 .git。保留已有 legacy 状态，不能为提速删除未知锁或其他任务的槽位。
 
-两个通道共用20个活跃名额上限，并服从运行平台更低的上限。Codex名额需通过runner预留；跨通道的文件所有权仍由主代理检查。单次运行目录应独立于项目测试/构建清理目录。
-
-本地验证（不调用付费模型）：
-
-```powershell
-node --test scripts/dispatch.test.mjs
-node scripts/dispatch.mjs doctor
-```
-
-安装时将 SKILL.md、agents、references、scripts（可含本 README）复制到 Codex skills 目录下的 task-arrangement 文件夹，不复制 .git。runner保留历史 deepseek-executor-state 状态目录，以兼容共享槽位；这不依赖旧skill文件夹，也不应随旧skill卸载而清理。
-
-## English
-
-Coordinate code work through one policy layer: the main agent owns decisions and integration; bounded implementation must run through the bundled DeepSeek dsh harness. Install the pinned harness when missing, configure its API key securely, and start it as a managed background task. If setup or runtime recovery fails, use gpt-5.6-luna with max reasoning for the original DeepSeek implementation scope. Explicitly default native investigation and review to gpt-5.6-sol; reserve gpt-6-astra for identified complex reasoning. Re-route implementation after investigation instead of letting a native explorer keep writing. Allow only trivial direct edits, inseparable complex core implementation, or evidenced harness failures as exceptions. Preserve the fixed DeepSeek protocol and parameters. See SKILL.md for routing, ownership, capacity and acceptance rules.
+legacy runner 修改时可运行 `node --test scripts/dispatch.test.mjs`；`node scripts/dispatch.mjs doctor` 只用于检查明确选择的 DeepSeek 环境。仅修改文档时检查技能格式、链接和规则一致性即可。

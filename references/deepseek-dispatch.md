@@ -1,6 +1,6 @@
 # 任务单与真实调用
 
-用于已按 SKILL.md 确定方案、范围和验收的默认实施任务；必须真实运行 harness，不能用 native subagent 代替后仍称为 DeepSeek 执行。不能把未完成设计的复杂任务装入此任务单来绕过分层。
+仅用于用户明确选择 DeepSeek 且已按 SKILL.md 确定方案、范围和验收的任务。普通 native 任务不加载此流程。选择 DeepSeek 后须真实运行 harness，不能用 native subagent 代替后仍称为 DeepSeek 执行；不能把未完成设计的复杂任务装入此任务单来绕过分层。
 
 ## 每批调用流程与故障分流
 
@@ -24,7 +24,7 @@
 & 'F:/nodejs/node.exe' 'C:/Users/Administrator/.codex/skills/task-arrangement/scripts/dispatch.mjs' slots
 ```
 
-有 native Codex 代理时（包括实施、探索和验收），主代理选一个稳定且独占的 coordinatorId（可用当前任务 ID），在创建它们之前执行 `dispatch.mjs aux <coordinatorId> <数量>`。之后各批填写这个 ID 与数量。代理全部结束后执行 `dispatch.mjs aux <coordinatorId> 0`；部分结束可减少数量。预留是独立共享记录，不随批次/runner/DeepSeek 进程退出自动释放。不允许两个主代理共用同一 coordinatorId。没有 native 代理时不需要该字段或预留。预留只计算容量，不登记 native 代理的文件范围，跨通道所有权由主代理核对。
+仅在明确使用 DeepSeek 并与 native Codex 代理混合执行时，主代理选一个稳定且独占的 coordinatorId（可用当前任务 ID），在混合执行开始前执行 `dispatch.mjs aux <coordinatorId> <数量>`，包含本主代理已经活跃的 native 代理。之后各批填写这个 ID 与数量。代理全部结束后执行 `dispatch.mjs aux <coordinatorId> 0`；部分结束可减少数量。预留是独立共享记录，不随批次/runner/DeepSeek 进程退出自动释放。不允许两个主代理共用同一 coordinatorId。纯 native 不调用 aux；没有 native 代理时也不需要该字段或预留。预留只计算容量，不登记 native 代理的文件范围，跨通道所有权由主代理核对。
 
 runner 保留 `$CODEX_HOME/deepseek-executor-state`（未配置 CODEX_HOME 时为 `~/.codex/deepseek-executor-state`）以兼容现有槽位与锁。这是运行状态目录，不依赖旧 skill 的安装目录；卸载旧 skill 不应清除它。
 

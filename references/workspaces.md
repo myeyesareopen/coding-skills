@@ -1,6 +1,6 @@
 # 工作区、集成和恢复
 
-以下规则同时适用于 DeepSeek 和 Codex 执行者。runner 的冲突检查覆盖其管理的 DeepSeek 任务；native 代理的范围由主代理纳入同一所有权清单，aux 预留不能代替文件和资源检查。
+以下规则同时适用于 native Luna/Codex 执行者，以及用户明确要求后启动的 legacy DeepSeek 执行者。runner 的冲突检查覆盖其管理的 legacy DeepSeek 任务；native 代理的范围由主代理纳入同一所有权清单。纯 native 使用平台容量管理，只有混合 DeepSeek 执行时才用 aux；aux 预留不能代替文件和资源检查。
 
 路径声明是调度约束，不是操作系统级写入沙箱；主代理仍须检查实际 diff 是否越界，不能将通过 validate 视为文件访问已被强制隔离。
 
@@ -24,8 +24,8 @@
 
 任务 JSON、runtime-home、result.json、summary.json 和日志放在独立运行目录，避开项目构建和测试会清理的路径。不要把共享运行目录分配给不同批次；需要重新派发时使用新目录，并在任务上下文中明确需要接续的旧结果。
 
-超时、失败、结果丢失时先确认进程是否退出，再读工作区 status、diff、最近提交，保留有价值的结果。不要一边旧执行者还在写，一边启动替代者修改相同文件。runner 在停止失败或不确定时保留槽位，不把未知进程当作已停止。
+超时、失败、结果丢失时先确认进程是否退出，再读工作区 status、diff、最近提交，保留有价值的结果。不要一边旧执行者还在写，一边启动替代者修改相同文件。legacy runner 在停止失败或不确定时保留槽位，不把未知进程当作已停止；native Luna 不因 DeepSeek 未运行而等待或切换。
 
-`dispatch.mjs slots` 列出槽位和 owner/child PID。进程异常退出可能留下槽位或 mutex；不要按年龄自动清除。确认 owner、dsh 子进程及它们派生的工具进程均已终止后，在已核对的状态目录内删除那个确定失效的槽位文件或 mutex 目录；不能批量清空其他任务的锁。Windows 操作全程用 PowerShell -LiteralPath，先确认绝对路径处于状态目录内。
+用户明确要求 legacy DeepSeek 时，`dispatch.mjs slots` 列出槽位和 owner/child PID。进程异常退出可能留下槽位或 mutex；不要按年龄自动清除。确认 owner、dsh 子进程及它们派生的工具进程均已终止后，在已核对的状态目录内删除那个确定失效的槽位文件或 mutex 目录；不能批量清空其他任务的锁。无 DeepSeek 请求时 native Luna 路径不启动或清理 DeepSeek。Windows 操作全程用 PowerShell -LiteralPath，先确认绝对路径处于状态目录内。
 
 集成及验证通过前保留 worktree；清理前核查路径、未提交修改与结果是否已保存，用 git worktree remove 正常移除，不常规使用 force。失败现场保留供接续任务使用。
