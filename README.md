@@ -2,12 +2,13 @@
 
 协调 Codex 与 DeepSeek 的项目代码工作。主代理负责设计、任务分解与最终集成；仅一处无需调查/设计的明显修正可直接完成。方案、范围和验收明确的代码实施必须实际调用 DeepSeek harness；调查和评审默认显式使用 gpt-5.6-sol medium/high，仅有具体复杂推理需求时使用 gpt-6-astra high。调查结束后重新路由实施，不能直接让 subagent 顺手改代码；跳过 harness 的实际阻断和升级 astra 的理由需要记录。
 
-DeepSeek 仍通过随附 scripts/dispatch.mjs 调用本机 @deepseek-ai/dsh 0.1.5-rc.2：SDK stdio JSON-RPC、sdk-minimal、deepseek-flash、max、393216输出上限。无需单独安装 deepseek-executor skill，也不改变 dsh、凭据或本地 Web 会话配置。
+DeepSeek 仍通过随附 scripts/dispatch.mjs 调用本机 @deepseek-ai/dsh 0.1.5-rc.2：SDK stdio JSON-RPC、sdk-minimal、deepseek-flash、max、393216输出上限。缺少本地 harness 或无法运行时，主代理先安装固定版本、安全配置 DeepSeek API key 并后台启动；安装、配置或启动失败后，固定使用 gpt-5.6-luna max 替代 DeepSeek 实施。无需单独安装 deepseek-executor skill，保留已有有效凭据及 Web 会话配置。
 
 权威规则见 [SKILL.md](SKILL.md)。按任务选择阅读：
 
 - [路由与验收](references/routing-and-acceptance.md)：任务分层、状态边界、验收场景。
 - [DeepSeek 调用协议](references/deepseek-dispatch.md)：固定配置、JSON任务单、运行与终态。
+- [初始化与 Luna 回退](references/deepseek-bootstrap.md)：主代理安装、API key 配置、后台运行和失败后的替代通道。
 - [Codex 角色任务单](references/codex-worker.md)：实现、探索、独立验收。
 - [工作区与恢复](references/workspaces.md)：基线、隔离、集成和失败产出保护。
 
@@ -24,4 +25,4 @@ node scripts/dispatch.mjs doctor
 
 ## English
 
-Coordinate code work through one policy layer: the main agent owns decisions and integration; bounded implementation must run through the bundled DeepSeek dsh harness. Explicitly default native investigation and review to gpt-5.6-sol; reserve gpt-6-astra for identified complex reasoning. Re-route implementation after investigation instead of letting a native explorer keep writing. Allow only trivial direct edits, inseparable complex core implementation, or evidenced harness failures as exceptions. Preserve the fixed DeepSeek protocol and parameters. See SKILL.md for routing, ownership, capacity and acceptance rules.
+Coordinate code work through one policy layer: the main agent owns decisions and integration; bounded implementation must run through the bundled DeepSeek dsh harness. Install the pinned harness when missing, configure its API key securely, and start it as a managed background task. If setup or runtime recovery fails, use gpt-5.6-luna with max reasoning for the original DeepSeek implementation scope. Explicitly default native investigation and review to gpt-5.6-sol; reserve gpt-6-astra for identified complex reasoning. Re-route implementation after investigation instead of letting a native explorer keep writing. Allow only trivial direct edits, inseparable complex core implementation, or evidenced harness failures as exceptions. Preserve the fixed DeepSeek protocol and parameters. See SKILL.md for routing, ownership, capacity and acceptance rules.

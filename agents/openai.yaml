@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Arrangement"
-  short_description: "DeepSeek builds; Sol investigates; Astra handles complexity."
-  default_prompt: "Use $task-arrangement to coordinate code work: run bounded implementation through the bundled DeepSeek harness, explicitly use gpt-5.6-sol for Codex investigation and review, and reserve gpt-6-astra for complex unresolved reasoning with a stated routing reason."
+  short_description: "DeepSeek setup and builds, Luna fallback, Sol/Astra reasoning."
+  default_prompt: "Use $task-arrangement to install, configure and start the DeepSeek harness in the background for bounded implementation, falling back to gpt-5.6-luna max if setup or runtime recovery fails; use gpt-5.6-sol for investigation and review and gpt-6-astra for complex unresolved reasoning."

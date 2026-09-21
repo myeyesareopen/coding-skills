@@ -5,7 +5,7 @@ description: Coordinate multi-module code changes or requested delegation with e
 
 # Task Arrangement
 
-主代理负责需求理解、架构与契约决策、任务分层、集成验收和用户沟通。**可明确下达方案和验收的代码实施默认且必须使用 DeepSeek harness；Codex 调查、方案辅助和评审默认使用 gpt-5.6-sol；仅复杂的未决推理使用 gpt-6-astra。** 下文列出的微小直接修改、复杂核心实现和已证实的 harness 故障是例外，不能把 native subagent 当作通用代码执行入口。向用户用中文汇报。
+主代理负责需求理解、架构与契约决策、任务分层、集成验收和用户沟通。**可明确下达方案和验收的代码实施默认且必须使用 DeepSeek harness；本地缺失或未运行时先安装、配置 API key 并后台启动，配置或启动失败后使用 gpt-5.6-luna max 替代 DeepSeek。Codex 调查、方案辅助和评审默认使用 gpt-5.6-sol；仅复杂的未决推理使用 gpt-6-astra。** 下文列出的微小直接修改、复杂核心实现和已证实的 harness 故障是例外，不能把 native subagent 当作通用代码执行入口。向用户用中文汇报。
 
 模型规则作用于本 skill 创建的 Codex 执行者；不能通过文字指令切换当前主代理模型。当前主代理即使是 astra，也应将值得委派的普通调查/评审交给 sol，明确方案后的实施交给 DeepSeek，不让子代理继承 astra。
 
@@ -17,7 +17,8 @@ description: Coordinate multi-module code changes or requested delegation with e
 |---|---|---|
 | 主代理直接处理 | 无需调查和设计的一处明显修正，如文案/拼写/单个配置值；快速只读检查；需求、架构和关键契约决策；必要的最终集成 | 当前主代理，不能用“小任务”承接完整功能或批量修复 |
 | DeepSeek 默认实施 | 方案、契约、上下文、独占可写范围和验收已明确；功能实现、修复、适配、重构及必要定向测试 | 必须实际调用 scripts/dispatch.mjs，即使只有一个实施任务也可 concurrency=1 |
-| Codex 默认调查/评审 | 代码定位、常规根因调查、方案辅助、代码审查与独立验收；符合下文例外的实现 | native subagent，显式 gpt-5.6-sol，通常 medium，较难用 high |
+| Luna 回退实施 | 已尝试安装、配置和后台启动，但 DeepSeek harness 仍不可用；接续原 DeepSeek 的明确实施任务 | native subagent，显式 gpt-5.6-luna、max；保留原范围和验收 |
+| Codex 默认调查/评审 | 代码定位、常规根因调查、方案辅助、代码审查与独立验收 | native subagent，显式 gpt-5.6-sol，通常 medium，较难用 high |
 | Codex 复杂推理 | 已指出无法局部化的多模块因果链、困难算法/协议证明，或并发/事务/安全边界相互制约且关键策略未定 | native subagent，显式 gpt-6-astra，通常 high，限定复杂核心 |
 
 DeepSeek 保留原执行技能的任务边界：主代理先给出可实施方案，执行者不能自行决定需求、重新设计系统、选择架构或接管关键集成。不要把未完成的设计问题以“实现模块”的名称交给 DeepSeek，也不要因 Codex 忙或不可用而将复杂任务降级给 DeepSeek。
@@ -28,7 +29,7 @@ DeepSeek 保留原执行技能的任务边界：主代理先给出可实施方�
 
 1. 判断当前阶段是调查/决策、实施还是验收。先固定未决契约；缺上下文时可由 sol 只读调查，不能直接派一个“调查并实现”的 Codex worker 包揽普通功能。
 2. 每次授予代码写权限前，检查能否写清方案、范围和验收。可以则调用 DeepSeek；“跨多个文件”“Codex 更方便”“已有空闲 subagent”“任务重要”都不是跳过理由。不能为了触发 harness 省略必要设计。
-3. native 写任务必须说明无法交给 DeepSeek 的具体未决判断，或记录已实际遇到的 harness 阻断及证据。优先由 sol 解决判断后交回主代理，再将实施重新路由给 DeepSeek；只有推理与实现不可分离的复杂核心才保留 Codex 写权限。
+3. native 写任务必须说明无法交给 DeepSeek 的具体未决判断，或记录安装、配置、启动后的 harness 阻断及证据。优先由 sol 解决判断后交回主代理，再将实施重新路由给 DeepSeek；除 Luna 回退外，只有推理与实现不可分离的复杂核心才保留 Codex 写权限。
 4. 选 astra 时写明复杂性与 sol 不适合的具体原因，或 sol 已尝试后的明确缺口。已明显复杂的任务可直接用 astra，无需先失败一次；不能因 high 强度、reviewer 角色、一次测试失败或模型继承而自动升级。
 5. 调查结束、契约冻结或故障排除后，重新判断下一阶段的路由；不能因为 Codex 已接触代码就继续让它完成可下达的实施。
 
@@ -38,15 +39,15 @@ DeepSeek 保留原执行技能的任务边界：主代理先给出可实施方�
 
 - @deepseek-ai/dsh 0.1.5-rc.2，SDK stdio JSON-RPC，sdk-minimal；保持现有 harness 调用方式。
 - provider=deepseek-official，model=deepseek-flash（DeepSeek-V4.1-Flash），reasoningEffort=max，maxTokens=393216。
-- 不通过 native spawn_agent 冒充 DeepSeek，不改为网页、HTTP/WebSocket、其他 CLI，不自动安装/升级或静默切换模型参数。384K 是单次输出上限，不是输出目标或总任务额度。
-- 派发前读 [DeepSeek 调用协议](references/deepseek-dispatch.md)。本轮首次使用先执行 doctor，填写任务单后依次执行 validate、run，等待 summary.json/result.json 并检查实际终态。doctor/validate 成功或口头声明“交给 DeepSeek”均不算实施调用。
-- doctor/validate/run 出错时按协议处理并保留错误证据；任务单错误先修正，槽位忙先排队，不能未经实际检查就认定 harness 不可用。确认环境阻断且本轮无法恢复时，说明降级原因后可交给 sol；复杂核心仍按复杂性选择 astra。禁止静默改走 subagent。
-- foregroundOnly=true；禁止子代理、dsh 递归和遗留后台服务。真实数据库迁移、外部模型联调及持久服务由主代理管理。
+- 不通过 native spawn_agent 冒充 DeepSeek，不改为网页、HTTP/WebSocket、其他 CLI，不擅自升级固定版本或静默切换模型参数。允许按初始化流程安装缺失的固定版本。384K 是单次输出上限，不是输出目标或总任务额度。
+- 派发前读 [DeepSeek 调用协议](references/deepseek-dispatch.md)。本轮首次使用先执行 doctor；缺少安装、凭据或可运行进程时，按 [初始化与 Luna 回退](references/deepseek-bootstrap.md) 安装、配置 API key、后台启动并验证，再执行任务。填写任务单后依次执行 validate、run，等待 summary.json/result.json 并检查实际终态。doctor/validate 成功或口头声明“交给 DeepSeek”均不算实施调用。
+- doctor/validate/run 出错时按协议处理并保留脱敏错误证据；任务单错误先修正，槽位忙先排队，不能未经检查和初始化就认定 harness 不可用。安装、凭据配置或后台启动未成功时，说明原因并用 model="gpt-5.6-luna"、reasoning_effort="max"、fork_turns="none" 接续原 DeepSeek 任务。复杂核心仍按复杂性选择 astra，调查与评审仍用 sol。
+- foregroundOnly=true 约束实施者及其工具，不禁止主代理管理 harness 的后台进程。主代理记录进程/session ID、监控结果并在完成或失败后清理；禁止执行者递归派发或遗留后台服务。真实数据库迁移、外部模型联调及持久服务由主代理管理。
 
 ### Codex 通道
 
 - 使用当前运行环境实际提供的 native subagent 工具。默认显式 model="gpt-5.6-sol"、reasoning_effort="medium"、fork_turns="none"；较难调查/验收先考虑 sol high。仅满足复杂推理门槛时显式 model="gpt-6-astra"、reasoning_effort="high"、fork_turns="none"，不省略 model 导致继承当前主代理模型。
-- sol 是 Codex 通道默认值，不取代 DeepSeek 的默认实施职责。安全、迁移、并发等关键词本身不强制 astra；必须指出具体复杂性。提高 reasoning effort 不等于升级模型。
+- sol 是调查与评审的默认值；DeepSeek 初始化或运行失败的实施回退固定使用 gpt-5.6-luna max，不使用 sol 替代。安全、迁移、并发等关键词本身不强制 astra；必须指出具体复杂性。提高 reasoning effort 不等于升级模型。
 - 调用前确认该模型及强度可用；不可用时由主代理缩小范围、接手或说明限制，不猜模型名、不静默降给 DeepSeek。
 - 不复制整段对话。读取并填写 [Codex 角色任务单](references/codex-worker.md)，只传最小充分上下文。除非用户明确要求新任务，否则使用 subagent，不创建用户侧新任务。
 
@@ -64,6 +65,7 @@ DeepSeek 保留原执行技能的任务边界：主代理先给出可实施方�
 
 - 活跃的 DeepSeek 执行者和 Codex subagent 合计不超过20；平台提供更小上限时服从该上限。20是上限，不是启动目标。
 - runner 自动管理 DeepSeek 槽位；创建 Codex subagent 前，用同一 runner 的 aux <coordinatorId> <数量> 预留本主代理所有仍在执行的 Codex subagent 名额。结束后更新数量，全部结束时显式 aux <coordinatorId> 0。
+- Luna 回退同样计入 Codex 名额。缺少 dsh 或 API key 不影响 aux；若 Node/runner 本身也无法运行，按 [初始化与 Luna 回退](references/deepseek-bootstrap.md) 核对已有占用后保守串行执行，不能绕过共享上限或清除未知占用。
 - 名额预留不是文件锁。主代理维护跨 DeepSeek/Codex 的所有权清单，检查写写、写读和共享资源冲突；runner 不会自动检测 native agent 的文件范围。
 - 仅并发执行无依赖、范围互不冲突、资源足够的任务。依赖任务放到下一批，前一批经主代理验收并进入所需工作区后再开始。
 - 容量暂满时等待、复用空闲 agent 或排队；不要丢弃任务或绕开容量检查。所有 worker 禁止再次派发子代理。

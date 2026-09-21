@@ -6,11 +6,11 @@
 
 ## 实施 worker
 
-这是例外通道：仅用于推理与修改不可分离的复杂核心，或已有错误证据证明 harness 本轮无法恢复的接续实现。方案、范围和验收已明确的普通实现不得使用本模板绕过 DeepSeek。调查结束不会自动获得实施授权。
+这是例外通道：用于推理与修改不可分离的复杂核心，或已按 [初始化流程](deepseek-bootstrap.md) 尝试安装、配置 API key、后台启动而仍失败后的 Luna max 接续实现。后者固定显式 model="gpt-5.6-luna"、reasoning_effort="max"、fork_turns="none"，覆盖上文的 sol 默认值。方案、范围和验收已明确的普通实现不得在未检查和初始化 harness 时使用本模板绕过 DeepSeek。调查结束不会自动获得实施授权。
 
 ```text
 角色：Codex 实施者
-模型/强度：gpt-5.6-sol medium/high；满足复杂性门槛才用 gpt-6-astra high
+模型/强度：DeepSeek 配置或运行失败的实施回退使用 gpt-5.6-luna max；满足复杂性门槛的核心使用 gpt-6-astra high
 路由例外：无法拆开的未决判断，或 harness 阻断的实际命令/错误证据；如使用 astra，说明 sol 不适合的原因
 目标：具体行为变化
 工作目录/基线：绝对路径、基线SHA或已检查的未提交状态
@@ -24,7 +24,7 @@
 交付：STATUS（COMPLETE/PARTIAL/BLOCKED）、SUMMARY、FILES、逐项验收证据、实际检查与未运行原因、COMMIT（没有则N/A）、RISKS。
 ```
 
-使用 high 不自动意味着使用 astra。复杂核心不会因为被命名为“常规接口”而降低路由；边界明确的多模块常规实现应交给 DeepSeek，仅在上述 harness 故障例外下使用 sol medium。
+使用 high 不自动意味着使用 astra。复杂核心不会因为被命名为“常规接口”而降低路由；边界明确的多模块常规实现应交给 DeepSeek，仅在上述 harness 故障例外下使用 Luna max，不使用 sol 代替。
 
 ## Explorer
 
