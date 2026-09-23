@@ -1,4 +1,4 @@
 interface:
   display_name: "Task Arrangement"
-  short_description: "Fewer handoffs; Luna builds, Sol investigates, Astra reasons."
-  default_prompt: "Use $task-arrangement to choose the shortest verifiable workflow: handle low-risk edits directly, keep routine module work with one Luna max agent, let authorized Sol investigations continue into repairs, and reserve Astra high for complex reasoning. Use DeepSeek only when explicitly requested."
+  short_description: "Route implementation and planning to Luna, Sol, or Astra."
+  default_prompt: "Use $task-arrangement to route bounded edits directly, routine modules to Luna max, investigation and high-impact boundaries to Sol, and complex upgrades, cross-service or new-project planning to Astra high."

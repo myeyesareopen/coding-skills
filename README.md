@@ -1,8 +1,8 @@
 # task-arrangement
 
-用最少交接协调代码任务：低风险局部修改由主代理直接完成；普通模块默认一个 Luna max 代理连贯定位、修改、自测；需要 Sol 调查的任务可在已授权范围内继续修复；复杂核心使用 Astra high。多个独立模块按所有权并行，主代理检查实际 diff 和验收证据。
+用最少交接协调代码任务：低风险局部修改由主代理直接完成；普通模块默认一个 Luna max 代理连贯定位、修改、自测；未知根因由 Sol medium 调查，共享契约或高影响边界由 Sol high 判断；复杂功能升级、跨服务和新项目规划，以及复杂推理，由 Astra high 完成。多个独立实施模块按所有权并行，主代理检查方案、实际 diff 和验收证据。
 
-当前保留 Luna max 默认，优先优化流程。纯 native 不调用 DeepSeek runner 的 aux/doctor，不例行增加独立评审或重复已通过的检查。只有用户明确要求 DeepSeek 时才使用保留的安装、配置、后台运行及 Luna 回退流程。
+当前保留 Luna max 默认，优先优化流程。不例行增加独立评审或重复已通过的检查。
 
 工具输出采用短结果直接返回、长日志按任务落盘的方式；聊天保留真实退出码、检查摘要和关键错误，失败时定向补读。重要阶段保留简短恢复状态，避免重复整文件、旧日志和交接上下文。日志仅按已定义保留期清理已结束且已验收任务，不删除聊天记录或自动创建定时任务。实际耗时与 token 收益需从后续任务测量。
 
@@ -11,8 +11,7 @@
 - [路由与验收](references/routing-and-acceptance.md)：场景和验证边界。
 - [工作区与恢复](references/workspaces.md)：隔离、已有修改及失败产出保护。
 - [路由器评估](references/router-evaluation.md)：Jev 与动态模型/推理等级的评估边界，尚未启用外部服务。
-- [DeepSeek 协议](references/deepseek-dispatch.md) / [初始化与回退](references/deepseek-bootstrap.md)：仅显式选择 DeepSeek 时读取。
 
-安装时将 SKILL.md、agents、references、scripts（可含 README）复制到 Codex skills/task-arrangement，不复制 .git。保留已有 legacy 状态，不能为提速删除未知锁或其他任务的槽位。
+安装时将 SKILL.md、agents、references（可含 README）复制到 Codex skills/task-arrangement，不复制 .git。
 
-legacy runner 修改时可运行 `node --test scripts/dispatch.test.mjs`；`node scripts/dispatch.mjs doctor` 只用于检查明确选择的 DeepSeek 环境。仅修改文档时检查技能格式、链接和规则一致性即可。
+修改文档时检查技能格式、链接和规则一致性。

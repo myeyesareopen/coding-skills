@@ -1,36 +1,38 @@
 ---
 name: task-arrangement
-description: Coordinate code changes with risk-based ownership and minimal handoffs. Handle bounded low-risk edits directly, keep routine module work with one native Luna agent, and use Sol or Astra when investigation or reasoning warrants it.
+description: Route code implementation and technical planning by scope and risk. Handle bounded edits directly, assign routine modules to Luna, investigation and high-impact boundaries to Sol, and complex upgrades, cross-service or new-project planning to Astra.
 ---
 
 # Task Arrangement
 
-主代理负责需求、共享契约、文件所有权、集成和中文汇报。目标是在验收成立的前提下减少总耗时与重复上下文，不按代理数量或模型调用次数衡量进度。
+主代理负责确认需求、委派边界、文件所有权、集成和中文汇报；规划任务由指定规划者产出方案，主代理核对并衔接实施。目标是在验收成立的前提下减少总耗时与重复上下文，不按代理数量或模型调用次数衡量进度。
 
 ## 最短可验收路径
 
 | 情况 | 执行方式 |
 |---|---|
 | 范围明确、低风险、容易验证的局部修改 | 主代理直接定位、修改、定向检查；可涉及多个紧密关联文件，不限于拼写或一处修改 |
-| 单模块常规功能或修复，值得委派 | 一个 native Luna 代理负责局部定位、实施、自测；不默认拆成 explorer、worker、verifier |
-| 主要困难是未知根因或跨模块调查 | Sol 调查；若原任务已授予明确范围内的修复权限，查清后可继续完成，不为换模型强制交接 |
-| 多个可独立推进的模块 | 每模块一个所有者，共享契约先确定，然后并行；依赖模块按需要衔接，不机械拆函数或文件 |
-| 难算法、协议证明、多重一致性边界相互制约 | Astra 处理复杂核心；仅当外围独立委派有实际收益时拆出 |
+| 单模块常规功能或修复，边界明确且值得委派 | 一个 Luna 代理负责局部定位、实施、自测；不默认拆成 explorer、worker、verifier |
+| 根因未知、需要独立调查 | Sol medium 找到根因、影响范围和修复依据；原任务已授予明确范围内的修复权限时可继续完成 |
+| 共享接口、数据迁移、认证、安全或并发边界需要判断失败影响 | Sol high 明确契约、失败场景与针对性验证；高影响本身不要求另起评审 |
+| 复杂功能升级规划、跨服务规划、新项目规划 | Astra high 负责完整方案：目标与边界、架构和服务职责、共享契约、阶段与依赖、关键风险及验收；按任务需要覆盖迁移、发布和回退 |
+| 难算法、协议证明、多重一致性边界相互制约 | Astra high 处理复杂核心，说明关键推理依据；仅当外围独立委派有实际收益时拆出 |
+| 多个可独立推进的实施模块 | 共享契约先确定，再按模块各指定一个所有者并行；依赖模块按需要衔接，不机械拆函数或文件 |
 
-直接处理依据是风险、边界和验证成本，不是文件数或拍脑袋的分钟阈值。数据迁移、认证、安全或并发改动先确认失败影响；关键词本身不强制升级，但不能为了走快速路径忽略跨模块契约或高影响风险。
+先判断当前交付是规划、调查还是实施。复杂升级、跨服务或新项目的规划由 Astra 完成；规划确定后，实施再按模块和风险分配。直接处理依据是风险、边界和验证成本，不是文件数或拍脑袋的分钟阈值。普通测试失败、文件多或任务重要不单独触发升级；数据迁移、认证、安全或并发改动先确认失败影响。
 
 ## 模型与推理等级
 
-- 普通常规实施保留 `model="gpt-5.6-luna"`、`reasoning_effort="max"` 的现有默认，先通过减少交接提速；不静默降低用户指定的强度。
-- 调查或必要的独立评审默认 `gpt-5.6-sol`、`medium`；有明确难点时用 `high`。同一 Sol 所有者获授权后可连贯完成局部修复，不强制转交 Luna。
-- 复杂推理默认 `gpt-6-astra`、`high`，用一句话说明具体复杂性；普通测试失败、文件多或任务重要不构成自动升级理由。
+- 常规模块实施用 `model="gpt-6-luna"`、`reasoning_effort="max"`；保留用户指定的模型与强度。
+- 未知根因调查或必要的独立评审用 `gpt-6-sol`、`medium`；共享契约或高影响边界需要深入判断时用 `high`。同一 Sol 所有者获授权后可连贯完成范围内修复。
+- 复杂功能升级规划、跨服务规划、新项目规划，以及难算法、协议证明或相互制约的一致性问题，用 `gpt-6-astra`、`high`。规划任务由 Astra 负责完整方案；委派时用一句话说明规划范围或具体复杂性。
 - native 子代理显式指定模型、强度及 `fork_turns="none"`，提供最小充分上下文；同一任务后续优先复用原所有者及其上下文。只读任务不能自行获得写权限。
 - 本规则只能选择新建或可配置执行者的模型，不能通过提示词切换当前主代理。模型不可用时说明限制，使用已获授权且可用的路径，不猜模型名。
 - 不为每个任务额外调用分类模型。可选路由器及动态强度的评估见 [路由器评估](references/router-evaluation.md)；当前未默认启用 Jev 或任何外部路由服务。
 
 ## 派发与上下文
 
-普通任务只需：目标/验收、工作目录与基线、可写与禁止范围、必要上下文、检查命令。按 [角色任务单](references/codex-worker.md) 精简填写，不给主代理直接处理的改动制作正式任务单。
+普通实施任务只需：目标/验收、工作目录与基线、可写与禁止范围、必要上下文、检查命令。规划任务说明现状、目标、约束、需决策的共享契约和方案交付物。按 [角色任务单](references/codex-worker.md) 精简填写，不给主代理直接处理的改动制作正式任务单。
 
 允许模块所有者在既定需求、接口与风险边界内自行定位和选择局部实现，不要求主代理先把每行改法设计完。只有缺少需求、共享契约冲突或需要越界时才回报决策。需要单独调查时，交付文件/符号、证据和未知项，避免长篇复述代码。
 
@@ -51,8 +53,7 @@ description: Coordinate code changes with risk-based ownership and minimal hando
 
 ## 容量与工作区
 
-- 纯 native 任务使用平台代理列表与实际并发上限，不调用旧 runner 的 doctor、slots、aux，不因 Node/dsh/key 缺失停下来。当前容量以工具实际提供值为准。
-- 只有明确使用 DeepSeek 且与 native 混合执行时，才用 legacy runner 的 aux 管理本主代理的 native 预留，全部结束后释放。合计遵守平台上限与 legacy 的 20 名额上限中较小者，不删除未知或存活的占用。
+- 使用平台代理列表与实际并发上限；当前容量以工具实际提供值为准。
 - 共用 checkout 时明确独占写范围，保护用户已有修改，避免写写与相关读写冲突。独立只读上下文可共享。较大并行写入或隔离要求明确时才建 worktree。
 - 主代理不并发修改执行者持有的文件；依赖其产出的任务在结果实际进入工作区后启动。共享类型、锁文件、生成输出、缓存、端口和数据库先指定所有者或隔离资源。
 - 需要隔离、补丁恢复或清理时再读 [工作区与恢复](references/workspaces.md)，不要为简单修改引入整套工作区流程。
@@ -65,7 +66,3 @@ description: Coordinate code changes with risk-based ownership and minimal hando
 - 优先使用完成事件和有界等待；等待时推进无依赖工作，不反复读相同日志。耗时变长先查进度/阻断，不仅因为慢就重启或升级。回复用户状态时不打断正常执行者。
 - 失败后先确认原执行者停止、保存有效修改，优先原所有者按具体新证据修复。同一未解决问题最多一次有新依据的自动重试；缺少需求才问用户。
 - 最终报告实际变更、检查、未完成项。已有工具数据时记录总墙钟耗时、阶段耗时、交接次数、用量与返工；并行阶段不得相加冒充总耗时，缺失用量写未知，不为统计增加模型调用。
-
-## DeepSeek 兼容路径
-
-仅用户明确要求 DeepSeek 时，读取 [调用协议](references/deepseek-dispatch.md) 和 [初始化与回退](references/deepseek-bootstrap.md)。保持固定 dsh 版本及 SDK stdio 参数，缺失时由主代理安装、配置 key、管理后台进程；失败后按该流程回退 Luna max。普通 native 任务不自动安装、不配置 key、不启动 DeepSeek。保留 legacy 脚本及状态，不将其移除或清理作为提速手段。
