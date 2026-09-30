@@ -12,8 +12,8 @@
 |---|---|---|
 | 范围明确、低风险且容易验证的局部修改 | 主代理直接处理 | 修改和定向检查结果 |
 | 边界明确的单模块常规功能或修复 | `gpt-6-luna` · `max` | 定位、实施、自测 |
-| 根因未知，需要独立调查 | `gpt-6-sol` · `medium` | 根因证据、影响范围、修复依据 |
-| 共享接口、迁移、认证、安全或并发边界需要判断失败影响 | `gpt-6-sol` · `high` | 契约、失败场景、针对性验证 |
+| 根因未知，需要独立调查 | `gpt-6.1-sol` · `medium` | 根因证据、影响范围、修复依据 |
+| 共享接口、迁移、认证、安全或并发边界需要判断失败影响 | `gpt-6.1-sol` · `high` | 契约、失败场景、针对性验证 |
 | 复杂功能升级、跨服务或新项目规划；难算法、协议或相互制约的一致性问题 | `gpt-6-astra` · `high` | 完整规划或复杂核心方案 |
 
 Astra 负责的规划应明确目标与范围、架构和服务职责、共享契约、实施阶段与依赖、关键风险及验收方式；迁移、发布和回退按任务需要纳入。规划确定后，再按模块和风险分配实施。
@@ -50,8 +50,8 @@ Astra 负责的规划应明确目标与范围、架构和服务职责、共享�
 |---|---|---|
 | Bounded, low-risk edit with a clear check | Primary agent | Change and focused check result |
 | Routine feature or fix within one well-defined module | `gpt-6-luna` · `max` | Investigation, implementation, focused checks |
-| Unknown root cause requiring independent investigation | `gpt-6-sol` · `medium` | Evidence, impact scope, basis for a fix |
-| Shared interfaces, migration, authentication, security, or concurrency boundaries with meaningful failure impact | `gpt-6-sol` · `high` | Contract, failure cases, targeted verification |
+| Unknown root cause requiring independent investigation | `gpt-6.1-sol` · `medium` | Evidence, impact scope, basis for a fix |
+| Shared interfaces, migration, authentication, security, or concurrency boundaries with meaningful failure impact | `gpt-6.1-sol` · `high` | Contract, failure cases, targeted verification |
 | Complex feature-upgrade, cross-service, or new-project planning; difficult algorithms, protocols, or coupled consistency constraints | `gpt-6-astra` · `high` | Complete plan or complex core solution |
 
 An Astra planning deliverable should cover goals and scope, architecture and service responsibilities, shared contracts, phases and dependencies, key risks, and acceptance criteria. Include migration, release, and rollback when relevant. Once the plan is settled, assign implementation by module and risk.
